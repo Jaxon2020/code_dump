@@ -1,10 +1,12 @@
+/* Existing styles from nav.css */
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
+    padding: 10px 50px; /* Updated from 20px to match nav.html */
     background-color: #fff;
-    border-bottom: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Added from nav.html */
+    /* Removed border-bottom to align with nav.html */
 }
 
 .nav-links {
@@ -21,13 +23,15 @@
 
 .nav-links a {
     text-decoration: none;
-    color: #777; /* Matches the color of "Home", "Market Place", etc. in the screenshot */
+    color: #666; /* Updated from #777 to match nav.html */
+    font-size: 16px; /* Added from nav.html */
 }
 
 .search-bar {
     padding: 5px;
-    margin-right: 5px;
+    margin-right: 5px; /* From nav.css */
     border: 1px solid #ccc;
+    border-radius: 5px; /* Added from nav.html */
 }
 
 .search-button {
@@ -150,4 +154,28 @@
 .signup-form hr {
     border: 1px solid #f1f1f1;
     margin-bottom: 25px;
+}
+
+/* New styles moved from nav.html */
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.cart, .sign-up, .sign-in {
+    background: none;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.sign-up, .sign-in {
+    background-color: #fff;
+    border-radius: 5px;
 }

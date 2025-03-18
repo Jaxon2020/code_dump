@@ -1,64 +1,62 @@
+/* Reset default styles */
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    padding: 0;
     background-color: #f4f4f4;
-    line-height: 1.6;
 }
 
-header {
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding: 20px;
+    background-color: #fff;
+    margin-bottom: 20px;
+}
+
+.featured-animal {
+    display: inline-block;
+    text-align: left;
+    max-width: 300px;
+}
+
+.featured-animal img {
+    width: 100%;
+    height: auto;
+}
+
+.animal-info {
+    padding: 10px;
+}
+
+.tags span {
     background-color: #4CAF50;
     color: white;
-    text-align: center;
-    padding: 1em 0;
+    padding: 5px 10px;
+    margin: 2px;
+    border-radius: 5px;
+    display: inline-block;
 }
 
-main {
+/* Marketplace Search */
+.marketplace-search {
     padding: 20px;
 }
 
 .marketplace-content {
     max-width: 1200px;
     margin: 0 auto;
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-.hero {
-    text-align: center;
-    padding: 20px 0;
-    background: #f9f9f9;
-}
-
-.featured-animal {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-}
-
-.featured-animal img {
-    max-width: 200px;
-    height: auto;
-    border-radius: 8px;
-}
-
-.animal-info {
-    text-align: left;
-}
-
-.tags span {
-    background: #ddd;
-    padding: 5px 10px;
-    margin: 0 5px 5px 0;
-    display: inline-block;
-    border-radius: 12px;
 }
 
 .create-listing-form, .search-form {
-    margin: 20px 0;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
 }
 
 .form-group {
@@ -68,7 +66,6 @@ main {
 .form-group label {
     display: block;
     margin-bottom: 5px;
-    font-weight: bold;
 }
 
 .form-group input {
@@ -76,112 +73,122 @@ main {
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    box-sizing: border-box;
 }
 
-.image-upload {
-    margin-bottom: 15px;
+.image-upload input[type="file"] {
+    padding: 5px;
 }
 
-.upload-area {
-    border: 2px dashed #ccc;
-    padding: 20px;
-    text-align: center;
-    background: #fafafa;
-    border-radius: 4px;
-}
-
-.upload-area input[type="file"] {
-    display: none;
-}
-
-.upload-area .preview {
-    min-height: 100px;
-}
-
-.create-btn, .search-btn, .reset-btn {
-    background-color: #4CAF50;
-    color: white;
+.create-btn, .search-btn, .reset-btn, .fetch-btn {
     padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.create-btn:hover, .search-btn:hover, .reset-btn:hover {
-    background-color: #45a049;
-}
-
-.search-form {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.search-section {
-    flex: 1;
-    min-width: 200px;
-}
-
-.no-results {
-    color: #888;
-    text-align: center;
-    display: none;
-}
-
-.listings-container {
-    margin-top: 20px;
-}
-
-#testButton, #loginButton, #logoutButton, #createListingButton {
-    padding: 10px 20px;
-    background-color: #007BFF;
-    color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    margin: 5px 0;
 }
 
-#testButton:hover, #loginButton:hover, #logoutButton:hover, #createListingButton:hover {
-    background-color: #0056b3;
+.create-btn {
+    background-color: #4CAF50;
+    color: white;
 }
 
-#result {
-    margin-top: 10px;
-    font-weight: bold;
+.search-btn {
+    background-color: #008CBA;
+    color: white;
 }
 
-.success {
-    color: green;
+.reset-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.fetch-btn {
+    background-color: #6c757d;
+    color: white;
+    margin-top: 20px;
+}
+
+.no-results {
+    text-align: center;
+    color: #666;
 }
 
 .failure {
     color: red;
 }
 
-table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 10px;
+.success {
+    color: green;
+}
+
+/* Listings Section */
+.listings-container {
+    padding: 20px 0;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 10px;
+}
+
+.card {
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    max-width: 300px;
+    margin: 0 auto;
+    text-align: center;
+    font-family: arial;
     background-color: white;
+    border-radius: 5px;
+    overflow: hidden;
 }
 
-th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
+.card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
 }
 
-th {
-    background-color: #f2f2f2;
-    font-weight: bold;
+.card h4 {
+    font-size: 18px;
+    margin: 10px 0;
 }
 
-tr:nth-child(even) {
-    background-color: #f9f9f9;
+.card .price {
+    color: grey;
+    font-size: 22px;
 }
 
-tr:hover {
-    background-color: #f1f1f1;
+.card p {
+    padding: 0 10px;
+    margin: 5px 0;
+}
+
+.card button {
+    border: none;
+    outline: 0;
+    padding: 12px;
+    color: white;
+    background-color: #000;
+    text-align: center;
+    cursor: pointer;
+    width: 100%;
+    font-size: 18px;
+}
+
+.card button:hover {
+    opacity: 0.7;
+}
+
+/* Fetch Section */
+.fetch-section {
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
 }
