@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Test Page</title>
+    <!-- Include Supabase JS from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+        }
+        .failure {
+            color: red;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #createForm {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        img {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Supabase Test Page</h1>
+    
+    <!-- Authentication Buttons -->
+    <button id="signUpButton">Sign Up</button>
+    <button id="signInButton">Sign In</button>
+    <button id="signOutButton">Sign Out</button>
+    
+    <!-- Create Listing Form -->
+    <form id="createForm">
+        <h3>Create a Listing</h3>
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" placeholder="e.g. Chicken - 6 Months Old" required>
+        </div>
+        <div class="form-group">
+            <label for="price">Price</label>
+            <input type="number" id="price" placeholder="$" step="0.01" required>
+        </div>
+        <div class="form-group">
+            <label for="type">Type</label>
+            <input type="text" id="type" placeholder="e.g. Chicken" required>
+        </div>
+        <div class="form-group">
+            <label for="location">Location</label>
+            <input type="text" id="location" placeholder="e.g. Springfield, IL" required>
+        </div>
+        <div class="form-group">
+            <label for="image">Upload Image</label>
+            <input type="file" id="image" accept="image/*" required>
+        </div>
+        <button type="submit">Create Listing</button>
+    </form>
+
+    <!-- Fetch Button -->
+    <button id="testButton">Fetch Listings</button>
+    <div id="result"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const supabaseUrl = 'https://owvtdphfvwmvcnstlfnz.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93dnRkcGhmdndtdmNuc3RsZm56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNTUwMjEsImV4cCI6MjA1NzgzMTAyMX0.0ohoAWFipfpWGDKTyPAOlo-IoCJtQTCJEG7ucnWROaE';
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            console.log('Supabase client initialized:', supabase);
+
+            const signUpButton = document.getElementById('signUpButton');
+            const signInButton = document.getElementById('signInButton');
+            const signOutButton = document.getElementById('signOutButton');
+            const testButton = document.getElementById('testButton');
+            const resultDiv = document.getElementById('result');
+            const createForm = document.getElementById('createForm');
+
+            // Check authentication status
+            async function checkAuth() {
+                const { data: { session } } = await supabase.auth.getSession();
+                return session?.user || null;
+            }
+
+            // Sign Up function
+            signUpButton.addEventListener('click', async () => {
+                const email = prompt('Enter your email:');
+                const password = prompt('Enter your password:');
+                if (email && password) {
+                    try {
+                        console.log('Attempting to sign up...', { email });
+                        const { data, error } = await supabase.auth.signUp({
+                            email,
+                            password,
+                        });
+                        console.log('Sign up response:', { data, error });
+                        if (error) throw error;
+                        resultDiv.textContent = 'Sign up successful! Check your email for confirmation.';
+                        resultDiv.className = 'success';
+                    } catch (error) {
+                        resultDiv.textContent = `Sign Up Failed: ${error.message}`;
+                        resultDiv.className = 'failure';
+                        console.error('Sign up error:', error);
+                    }
+                }
+            });
+
+            // Sign In function
+            signInButton.addEventListener('click', async () => {
+                const email = prompt('Enter your email:');
+                const password = prompt('Enter your password:');
+                if (email && password) {
+                    try {
+                        console.log('Attempting to sign in...', { email });
+                        const { data, error } = await supabase.auth.signInWithPassword({
+                            email,
+                            password,
+                        });
+                        console.log('Sign in response:', { data, error });
+                        if (error) throw error;
+                        resultDiv.textContent = 'Sign in successful!';
+                        resultDiv.className = 'success';
+                        console.log('Logged in user:', await checkAuth());
+                    } catch (error) {
+                        resultDiv.textContent = `Sign In Failed: ${error.message}`;
+                        resultDiv.className = 'failure';
+                        console.error('Sign in error:', error);
+                    }
+                }
+            });
+
+            // Sign Out function
+            signOutButton.addEventListener('click', async () => {
+                try {
+                    console.log('Attempting to sign out...');
+                    await supabase.auth.signOut();
+                    resultDiv.textContent = 'Signed out successfully.';
+                    resultDiv.className = 'success';
+                    console.log('Signed out');
+                } catch (error) {
+                    resultDiv.textContent = `Sign Out Failed: ${error.message}`;
+                    resultDiv.className = 'failure';
+                    console.error('Sign out error:', error);
+                }
+            });
+
+            // Create listing function with image upload
+            createForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const user = await checkAuth();
+                if (!user) {
+                    resultDiv.textContent = 'Please sign in to create a listing.';
+                    resultDiv.className = 'failure';
+                    return;
+                }
+
+                const title = document.getElementById('title').value;
+                const price = parseFloat(document.getElementById('price').value);
+                const type = document.getElementById('type').value;
+                const location = document.getElementById('location').value;
+                const imageFile = document.getElementById('image').files[0];
+
+                if (!title || !price || !type || !location || !imageFile) {
+                    resultDiv.textContent = 'All fields, including image, are required.';
+                    resultDiv.className = 'failure';
+                    return;
+                }
+
+                try {
+                    console.log('Attempting to upload image and create listing...', { title, price, type, location });
+                    // Upload image to Supabase Storage
+                    const fileName = `${Date.now()}_${imageFile.name}`;
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('listings-images') // Ensure this bucket exists
+                        .upload(`public/${fileName}`, imageFile, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
+
+                    if (uploadError) throw uploadError;
+
+                    // Get public URL of the uploaded image
+                    const { data: urlData } = supabase.storage
+                        .from('listings-images')
+                        .getPublicUrl(`public/${fileName}`);
+                    const imageUrl = urlData.publicUrl;
+
+                    // Insert listing with image URL
+                    const { data, error } = await supabase
+                        .from('listings')
+                        .insert({
+                            title,
+                            price,
+                            type,
+                            location,
+                            image_url: imageUrl,
+                            user_id: user.id,
+                        });
+
+                    console.log('Full response:', { data, error });
+
+                    if (error) throw error;
+
+                    resultDiv.textContent = 'Listing created successfully!';
+                    resultDiv.className = 'success';
+                    createForm.reset(); // Clear the form
+                } catch (error) {
+                    resultDiv.textContent = `Create Failed: ${error.message}`;
+                    resultDiv.className = 'failure';
+                    console.error('Create error:', error);
+                }
+            });
+
+            // Fetch listings function with image display
+            async function fetchListings() {
+                resultDiv.textContent = 'Fetching data...';
+                resultDiv.className = '';
+
+                try {
+                    console.log('Attempting to fetch data...');
+                    const { data, error } = await supabase
+                        .from('listings')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    console.log('Full response:', { data, error });
+
+                    if (error) throw error;
+
+                    if (data.length === 0) {
+                        resultDiv.textContent = 'Success! No data found in table.';
+                        resultDiv.className = 'success';
+                    } else {
+                        resultDiv.textContent = 'Data fetched successfully:';
+                        resultDiv.className = 'success';
+                        let tableHTML = '<table><tr><th>ID</th><th>Title</th><th>Price</th><th>Type</th><th>Location</th><th>Image</th><th>Created At</th></tr>';
+                        data.forEach(row => {
+                            tableHTML += `<tr>
+                                <td>${row.id}</td>
+                                <td>${row.title}</td>
+                                <td>$${row.price.toFixed(2)}</td>
+                                <td>${row.type}</td>
+                                <td>${row.location}</td>
+                                <td><img src="${row.image_url || 'N/A'}" alt="${row.title}"></td>
+                                <td>${new Date(row.created_at).toLocaleString()}</td>
+                            </tr>`;
+                        });
+                        tableHTML += '</table>';
+                        resultDiv.innerHTML = tableHTML; // Overwrite to avoid duplicate tables
+                    }
+                } catch (error) {
+                    resultDiv.textContent = `Fetch Failed: ${error.message}`;
+                    resultDiv.className = 'failure';
+                    console.error('Fetch error:', error);
+                }
+            }
+
+            // Fetch data on button click
+            testButton.addEventListener('click', async () => {
+                await fetchListings();
+            });
+        });
+    </script>
+</body>
+</html>

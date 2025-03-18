@@ -1,176 +1,142 @@
-// Initialize Supabase client
-const supabaseUrl = 'https://owvtdphfvwmvcnstlfnz.supabase.co'; // Replace with your Project URL
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93dnRkcGhmdndtdmNuc3RsZm56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNTUwMjEsImV4cCI6MjA1NzgzMTAyMX0.0ohoAWFipfpWGDKTyPAOlo-IoCJtQTCJEG7ucnWROaE'; // Replace with your anon key
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-// Store listings (fetched from Supabase instead of localStorage)
-let listings = [];
-
-// Function to fetch listings from Supabase
-async function fetchListings() {
-    const { data, error } = await supabase.from('listings').select('*');
-    if (error) console.error('Error fetching listings:', error);
-    else listings = data || [];
-    displayListings(listings);
-}
-
-// Function to display listings
-function displayListings(listingsToShow) {
-    const listingsContainer = document.querySelector('.listings-container');
-    listingsContainer.innerHTML = ''; // Clear existing listings
-
-    if (listingsToShow.length === 0) {
-        document.querySelector('.no-results').style.display = 'block';
-    } else {
-        document.querySelector('.no-results').style.display = 'none';
-        listingsToShow.forEach(listing => {
-            const card = document.createElement('div');
-            card.classList.add('featured-animal');
-            card.innerHTML = `
-                <img src="${listing.image_url}" alt="${listing.type}">
-                <div class="animal-info">
-                    <h3>${listing.title}</h3>
-                    <p class="price">$${listing.price}</p>
-                    <p class="details">Type: ${listing.type} | Location: ${listing.location}</p>
-                    <button class="add-to-cart">Add to Cart</button>
-                </div>
-            `;
-            listingsContainer.appendChild(card);
-        });
-    }
-}
-
-// Initial fetch of listings when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    fetchListings();
+    const supabaseUrl = 'https://owvtdphfvwmvcnstlfnz.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93dnRkcGhmtndtdmNuc3RsZm56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNTUwMjEsImV4cCI6MjA1NzgzMTAyMX0.0ohoAWFipfpWGDKTyPAOlo-IoCJtQTCJEG7ucnWROaE';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client initialized:', supabase);
 
-    // Handle image preview
-    const imageInput = document.getElementById('listing-image');
-    const preview = document.getElementById('image-preview');
+    const loginButton = document.getElementById('loginButton');
+    const logoutButton = document.getElementById('logoutButton');
+    const createListingButton = document.getElementById('createListingButton');
+    const testButton = document.getElementById('testButton');
+    const resultDiv = document.getElementById('result');
 
-    imageInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
-                preview.querySelector('img').style.maxWidth = '100%';
-                preview.querySelector('img').style.maxHeight = '200px';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            preview.innerHTML = '<p>Invalid file type. Please upload an image.</p>';
-        }
-    });
-
-    // Handle drag and drop for image upload
-    const uploadArea = document.querySelector('.upload-area');
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
-
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('dragover');
-    });
-
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
-                preview.querySelector('img').style.maxWidth = '100%';
-                preview.querySelector('img').style.maxHeight = '200px';
-                imageInput.files = e.dataTransfer.files; // Update input files
-            };
-            reader.readAsDataURL(file);
-        } else {
-            preview.innerHTML = '<p>Invalid file type. Please upload an image.</p>';
-        }
-    });
-});
-
-// Handle form submission to create a new listing
-document.getElementById('create-listing-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const title = document.getElementById('listing-title').value;
-    const price = parseFloat(document.getElementById('listing-price').value);
-    const type = document.getElementById('listing-type').value;
-    const location = document.getElementById('listing-location').value;
-    const imageInput = document.getElementById('listing-image');
-    const file = imageInput.files[0];
-
-    let imageUrl = null;
-    if (file) {
-        // Upload image to Supabase Storage
-        const fileName = `${Date.now()}-${file.name}`;
-        const { data, error: uploadError } = await supabase.storage
-            .from('listing-images')
-            .upload(fileName, file, {
-                cacheControl: '3600',
-                upsert: false
-            });
-        if (uploadError) {
-            console.error('Error uploading image:', uploadError);
-            return;
-        }
-        // Get public URL of the uploaded image
-        const { data: urlData, error: urlError } = supabase.storage
-            .from('listing-images')
-            .getPublicUrl(fileName);
-        if (urlError) {
-            console.error('Error getting public URL:', urlError);
-            return;
-        }
-        imageUrl = urlData.publicUrl;
+    // Check authentication status
+    async function checkAuth() {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.user || null;
     }
 
-    // Insert listing into Supabase database
-    const { data, error } = await supabase.from('listings').insert({
-        title,
-        price,
-        type,
-        location,
-        image_url: imageUrl
-    }).select();
-    if (error) console.error('Error inserting listing:', error);
-    else {
-        listings.push(data[0]); // Update local listings array
-        document.getElementById('create-listing-form').reset();
-        document.getElementById('image-preview').innerHTML = '<p>Drag and drop an image here or click to upload</p>';
-        displayListings(listings);
-    }
-});
-
-// Handle search/filter functionality
-document.querySelector('.search-btn').addEventListener('click', filterListings);
-
-function filterListings() {
-    const usersInput = document.querySelector('input[placeholder="Search users by name or email..."]').value.toLowerCase();
-    const typeInput = document.querySelector('input[placeholder="e.g. Chicken"]').value.toLowerCase();
-    const locationInput = document.querySelector('input[placeholder="e.g. Springfield, IL"]').value.toLowerCase();
-    const minPrice = parseFloat(document.querySelector('input[placeholder="$"]').value) || 0;
-    const maxPrice = parseFloat(document.querySelector('input[placeholder="$"]:nth-of-type(2)').value) || Infinity;
-
-    const filteredListings = listings.filter(listing => {
-        const titleMatch = usersInput ? listing.title.toLowerCase().includes(usersInput) : true;
-        const typeMatch = typeInput ? listing.type.toLowerCase().includes(typeInput) : true;
-        const locationMatch = locationInput ? listing.location.toLowerCase().includes(locationInput) : true;
-        const priceMatch = listing.price >= minPrice && listing.price <= maxPrice;
-
-        return titleMatch && typeMatch && locationMatch && priceMatch;
+    // Login function
+    loginButton.addEventListener('click', async () => {
+        const { error } = await supabase.auth.signInWithPassword({
+            email: prompt('Enter your email:'),
+            password: prompt('Enter your password:'),
+        });
+        if (error) {
+            resultDiv.textContent = `Login Failed: ${error.message}`;
+            resultDiv.className = 'failure';
+            console.error('Login error:', error);
+        } else {
+            resultDiv.textContent = 'Logged in successfully!';
+            resultDiv.className = 'success';
+            console.log('Logged in user:', await checkAuth());
+        }
     });
 
-    displayListings(filteredListings);
-}
+    // Logout function
+    logoutButton.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        resultDiv.textContent = 'Logged out.';
+        resultDiv.className = 'success';
+        console.log('Logged out');
+    });
 
-// Handle reset functionality
-document.querySelector('.reset-btn').addEventListener('click', () => {
-    document.querySelectorAll('input').forEach(input => input.value = '');
-    document.getElementById('image-preview').innerHTML = '<p>Drag and drop an image here or click to upload</p>';
-    displayListings(listings);
+    // Create listing function
+    createListingButton.addEventListener('click', async () => {
+        const user = await checkAuth();
+        if (!user) {
+            resultDiv.textContent = 'Please log in to create a listing.';
+            resultDiv.className = 'failure';
+            return;
+        }
+
+        const title = document.getElementById('listing-title').value;
+        const price = parseFloat(document.getElementById('listing-price').value);
+        const type = document.getElementById('listing-type').value;
+        const location = document.getElementById('listing-location').value;
+        const imageInput = document.getElementById('listing-image');
+        let imageUrl = ''; // Placeholder for now; we'll handle image upload later
+
+        if (!title || !price || !type || !location) {
+            resultDiv.textContent = 'All fields are required.';
+            resultDiv.className = 'failure';
+            return;
+        }
+
+        try {
+            console.log('Attempting to create listing...', { title, price, type, location, imageUrl });
+            const { data, error } = await supabase
+                .from('listings')
+                .insert({
+                    title,
+                    price,
+                    type,
+                    location,
+                    image_url: imageUrl,
+                    user_id: user.id, // Ties the listing to the authenticated user
+                });
+
+            console.log('Full response:', { data, error });
+
+            if (error) throw error;
+
+            resultDiv.textContent = 'Listing created successfully!';
+            resultDiv.className = 'success';
+            // Clear form (optional)
+            document.getElementById('listingForm').reset();
+        } catch (error) {
+            resultDiv.textContent = `Create Failed: ${error.message}`;
+            resultDiv.className = 'failure';
+            console.error('Create error:', error);
+        }
+    });
+
+    // Fetch listings function
+    async function fetchListings() {
+        resultDiv.textContent = 'Fetching data...';
+        resultDiv.className = '';
+
+        try {
+            console.log('Attempting to fetch data...');
+            const { data, error } = await supabase
+                .from('listings')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            console.log('Full response:', { data, error });
+
+            if (error) throw error;
+
+            if (data.length === 0) {
+                resultDiv.textContent = 'Success! No data found in table.';
+                resultDiv.className = 'success';
+            } else {
+                resultDiv.textContent = 'Data fetched successfully:';
+                resultDiv.className = 'success';
+                let tableHTML = '<table><tr><th>ID</th><th>Title</th><th>Price</th><th>Type</th><th>Location</th><th>Image URL</th><th>Created At</th></tr>';
+                data.forEach(row => {
+                    tableHTML += `<tr>
+                        <td>${row.id}</td>
+                        <td>${row.title}</td>
+                        <td>$${row.price.toFixed(2)}</td>
+                        <td>${row.type}</td>
+                        <td>${row.location}</td>
+                        <td>${row.image_url || 'N/A'}</td>
+                        <td>${new Date(row.created_at).toLocaleString()}</td>
+                    </tr>`;
+                });
+                tableHTML += '</table>';
+                resultDiv.innerHTML = tableHTML; // Overwrite to avoid duplicate tables
+            }
+        } catch (error) {
+            resultDiv.textContent = `Fetch Failed: ${error.message}`;
+            resultDiv.className = 'failure';
+            console.error('Fetch error:', error);
+        }
+    }
+
+    // Fetch data on test button click
+    testButton.addEventListener('click', async () => {
+        await fetchListings();
+    });
 });

@@ -1,297 +1,187 @@
-/* General Styles (Basic styles applicable to marketplace.html) */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    color: #333;
-    box-sizing: border-box;
+    background-color: #f4f4f4;
+    line-height: 1.6;
 }
 
-/* Ensure all elements use border-box */
-*, *:before, *:after {
-    box-sizing: inherit;
+header {
+    background-color: #4CAF50;
+    color: white;
+    text-align: center;
+    padding: 1em 0;
 }
 
-/* Hero Section */
-.hero {
-    padding: 20px 50px;
-    background-color: #f9f9f9;
-    display: flex;
-    justify-content: center;
-}
-
-.featured-animal {
-    position: relative;
-    max-width: 600px;
-    width: 100%;
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    margin: 0 auto;
-}
-
-.featured-animal img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-.animal-info {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 10px;
-    border-radius: 5px;
-}
-
-.animal-info h3 {
-    margin: 0;
-    font-size: 20px;
-}
-
-.animal-info p {
-    margin: 5px 0;
-    font-size: 18px;
-    font-weight: bold;
-}
-
-.tags {
-    display: flex;
-    gap: 10px;
-}
-
-.tags span {
-    background-color: #e0e0e0;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 14px;
-}
-
-/* Marketplace Search Section */
-.marketplace-search {
-    padding: 50px;
-    background-color: #fff;
-    display: flex;
-    justify-content: center;
+main {
+    padding: 20px;
 }
 
 .marketplace-content {
     max-width: 1200px;
-    width: 100%;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     margin: 0 auto;
-}
-
-.marketplace-content h2 {
-    font-size: 24px;
-    margin-top: 0;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.create-listing-form {
-    margin-bottom: 20px;
+    background: white;
     padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 10px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
-.create-listing-form h3 {
-    font-size: 20px;
-    margin-top: 0;
-    margin-bottom: 15px;
+.hero {
     text-align: center;
+    padding: 20px 0;
+    background: #f9f9f9;
+}
+
+.featured-animal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.featured-animal img {
+    max-width: 200px;
+    height: auto;
+    border-radius: 8px;
+}
+
+.animal-info {
+    text-align: left;
+}
+
+.tags span {
+    background: #ddd;
+    padding: 5px 10px;
+    margin: 0 5px 5px 0;
+    display: inline-block;
+    border-radius: 12px;
+}
+
+.create-listing-form, .search-form {
+    margin: 20px 0;
 }
 
 .form-group {
-    display: flex;
-    flex-direction: column;
     margin-bottom: 15px;
 }
 
 .form-group label {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 5px;
-}
-
-.form-group input[type="text"],
-.form-group input[type="number"] {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
-}
-
-.create-btn {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 16px;
-    width: 100%;
-}
-
-.search-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
-    justify-content: center;
-}
-
-.search-section {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 200px;
-    max-width: 250px;
-}
-
-.search-section label {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 5px;
-}
-
-.search-section input {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
-}
-
-.search-btn, .reset-btn {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    padding: 8px 15px;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 14px;
-    margin: 10px 5px 0;
-}
-
-.reset-btn {
-    background-color: #ccc;
-}
-
-.no-results {
-    color: #666;
-    font-style: italic;
-    margin-top: 10px;
-    text-align: center;
-}
-
-/* Item Listings Section */
-.listings-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    justify-items: center;
-    margin-top: 20px;
-}
-
-/* Product Card (Mirroring Featured Animal) */
-.featured-animal {
-    position: relative;
-    max-width: 300px;
-    width: 100%;
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    margin: 0 auto;
-}
-
-.featured-animal img {
-    width: 100%;
-    height: auto;
     display: block;
-}
-
-.animal-info {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 10px;
-    border-radius: 5px;
-}
-
-.animal-info .price {
-    margin: 5px 0;
-    font-size: 18px;
+    margin-bottom: 5px;
     font-weight: bold;
 }
 
-.animal-info .details {
-    font-size: 14px;
-    color: #666;
-    margin: 5px 0;
-}
-
-.animal-info button.add-to-cart {
-    border: none;
-    outline: 0;
-    padding: 8px 15px;
-    color: white;
-    background-color: #000;
-    text-align: center;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 14px;
-    margin-top: 10px;
+.form-group input {
     width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
 }
 
-.animal-info button.add-to-cart:hover {
-    opacity: 0.7;
-}
-
-/* Modern Image Upload Styles */
 .image-upload {
-    position: relative;
+    margin-bottom: 15px;
 }
 
 .upload-area {
     border: 2px dashed #ccc;
-    border-radius: 5px;
     padding: 20px;
     text-align: center;
-    background-color: #f9f9f9;
-    cursor: pointer;
-    transition: border-color 0.3s;
-}
-
-.upload-area.dragover {
-    border-color: #007bff;
-    background-color: #e6f3ff;
+    background: #fafafa;
+    border-radius: 4px;
 }
 
 .upload-area input[type="file"] {
-    display: none; /* Hide the default file input */
+    display: none;
 }
 
 .upload-area .preview {
-    margin-top: 10px;
+    min-height: 100px;
 }
 
-.upload-area .preview img {
-    max-width: 100%;
-    max-height: 200px;
+.create-btn, .search-btn, .reset-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.create-btn:hover, .search-btn:hover, .reset-btn:hover {
+    background-color: #45a049;
+}
+
+.search-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.search-section {
+    flex: 1;
+    min-width: 200px;
+}
+
+.no-results {
+    color: #888;
+    text-align: center;
+    display: none;
+}
+
+.listings-container {
+    margin-top: 20px;
+}
+
+#testButton, #loginButton, #logoutButton, #createListingButton {
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
     border-radius: 5px;
+    cursor: pointer;
+    margin: 5px 0;
 }
 
-.upload-area p {
-    margin: 0;
-    color: #666;
-    font-size: 14px;
+#testButton:hover, #loginButton:hover, #logoutButton:hover, #createListingButton:hover {
+    background-color: #0056b3;
+}
+
+#result {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.success {
+    color: green;
+}
+
+.failure {
+    color: red;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 10px;
+    background-color: white;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
 }
