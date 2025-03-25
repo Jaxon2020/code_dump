@@ -1,0 +1,252 @@
+<?php
+// Prevents redefinition of functions if this file is included multiple times
+if (!defined('SUPABASE_USER_LOADED')) {
+    define('SUPABASE_USER_LOADED', true);
+
+    if (!function_exists('fetchUserData')) {
+        function fetchUserData($userId, $supabaseKey, $restUrl, $authToken) {
+            global $message;
+            if (empty($authToken)) {
+                $message = "Fetch User Data Failed: Authentication required.";
+                error_log("Fetch User Data Failed: Authentication required for user ID $userId");
+                return null;
+            }
+
+            $headers = getCommonHeaders($supabaseKey, $authToken);
+            $url = $restUrl . '/user_information?select=*&id=eq.' . $userId;
+            $response = makeHttpRequest($url, 'GET', $headers);
+
+            if ($response === false) {
+                $message = "Fetch User Data Failed: Unable to connect to Supabase or invalid response. URL: $url";
+                error_log("Fetch User Data Failed: Unable to connect to Supabase or invalid response. URL: $url");
+                return null;
+            }
+            if (is_array($response) && isset($response['error'])) {
+                $message = "Fetch User Data Failed: " . $response['error']['message'] . " (URL: $url)";
+                error_log("Fetch User Data Failed: " . $response['error']['message'] . " (URL: $url)");
+                return null;
+            }
+            if (empty($response)) {
+                $message = "No user data found for user ID $userId.";
+                error_log("No user data found for user ID $userId.");
+                return null;
+            }
+            return $response[0];
+        }
+    }
+
+    if (!function_exists('handleSignup')) {
+        function handleSignup($postData, $supabaseKey, $authUrl, $restUrl) {
+            global $message;
+
+            $token = $postData['form_token'] ?? '';
+            if (!validateFormToken($token, 'signup_form')) {
+                $message = "Sign Up Failed: Invalid form submission.";
+                error_log("Sign Up Failed: Invalid form submission. Token: $token");
+                return;
+            }
+
+            $email = filter_var($postData['email'] ?? '', FILTER_VALIDATE_EMAIL);
+            $password = $postData['password'] ?? '';
+
+            if (!$email) {
+                $message = "Sign Up Failed: A valid email is required.";
+                error_log("Sign Up Failed: A valid email is required.");
+                return;
+            }
+
+            if (strlen($password) < 6) {
+                $message = "Sign Up Failed: Password must be at least 6 characters long.";
+                error_log("Sign Up Failed: Password must be at least 6 characters long.");
+                return;
+            }
+
+            $data = json_encode([
+                'email' => $email,
+                'password' => $password,
+                'options' => [
+                    'emailRedirectTo' => 'https://farmstomarkets.com/create-profile'
+                ]
+            ]);
+            $headers = getCommonHeaders($supabaseKey);
+            $response = makeHttpRequest($authUrl . '/signup', 'POST', $headers, $data);
+
+            if ($response && isset($response['error'])) {
+                $message = "Sign Up Failed: " . $response['error']['message'];
+                error_log("Sign Up Failed: " . $response['error']['message']);
+            } elseif ($response) {
+                $message = "Sign up successful! Please check your email to confirm your account.";
+                error_log("Sign up successful for email: $email");
+            } else {
+                $message = "Sign Up Failed: Unable to connect to Supabase.";
+                error_log("Sign Up Failed: Unable to connect to Supabase.");
+            }
+        }
+    }
+
+    if (!function_exists('handleSignin')) {
+        function handleSignin($postData, $supabaseKey, $authUrl, $restUrl) {
+            global $message;
+
+            $token = $postData['form_token'] ?? '';
+            if (!validateFormToken($token, 'signin_form')) {
+                $message = "Sign In Failed: Invalid form submission.";
+                error_log("Sign In Failed: Invalid form submission. Token: $token");
+                return;
+            }
+
+            $email = $postData['email'] ?? '';
+            $password = $postData['password'] ?? '';
+            if (empty($email) || empty($password)) {
+                $message = "Sign In Failed: Email and password are required.";
+                error_log("Sign In Failed: Email and password are required.");
+                return;
+            }
+            $data = json_encode(['email' => $email, 'password' => $password]);
+            $headers = getCommonHeaders($supabaseKey);
+            $response = makeHttpRequest($authUrl . '/token?grant_type=password', 'POST', $headers, $data);
+            if ($response && isset($response['error'])) {
+                $message = "Sign In Failed: " . $response['error']['message'];
+                error_log("Sign In Failed: " . $response['error']['message']);
+            } else if ($response) {
+                $_SESSION['access_token'] = $response['access_token'];
+                $_SESSION['user_id'] = $response['user']['id'] ?? '';
+                $_SESSION['email'] = $email;
+
+                $userData = fetchUserData($_SESSION['user_id'], $supabaseKey, $restUrl, $_SESSION['access_token']);
+                if (!$userData || !isset($userData['id'])) {
+                    $message = "Sign in successful! Please create your profile.";
+                    error_log("Sign in successful for user ID {$_SESSION['user_id']}, but no user_information found.");
+                } else {
+                    $message = "Sign in successful!";
+                    error_log("Sign in successful for user ID {$_SESSION['user_id']}.");
+                }
+
+                if ($userData && isset($userData['theme'])) {
+                    $_SESSION['theme'] = $userData['theme'];
+                } else {
+                    $_SESSION['theme'] = 'farmed';
+                }
+            } else {
+                $message = "Sign In Failed: Unknown error";
+                error_log("Sign In Failed: Unknown error for email $email");
+            }
+        }
+    }
+
+    if (!function_exists('handleSignout')) {
+        function handleSignout() {
+            global $message;
+            unset($_SESSION['access_token']);
+            unset($_SESSION['user_id']);
+            unset($_SESSION['email']);
+            unset($_SESSION['theme']);
+            unset($_SESSION['form_tokens']);
+            $message = "Signed out successfully.";
+            error_log("User signed out successfully.");
+        }
+    }
+
+    if (!function_exists('handleCreateProfile')) {
+        function handleCreateProfile($postData, $session, $supabaseKey, $restUrl, $availableThemes) {
+            global $message;
+
+            $token = $postData['form_token'] ?? '';
+            if (!validateFormToken($token, 'profile_form')) {
+                $message = "Profile Submission Failed: Invalid or duplicate form submission.";
+                error_log("Profile Submission Failed: Invalid or duplicate form submission. Token: $token");
+                return false;
+            }
+
+            $name = trim($postData['name'] ?? '');
+            $phone_number = trim($postData['phone_number'] ?? '');
+            $theme = trim($postData['theme'] ?? 'farmed');
+            $email = trim($postData['email'] ?? $session['email'] ?? '');
+
+            if (empty($name)) {
+                $message = "Profile Submission Failed: Name is required.";
+                error_log("Profile Submission Failed: Name is required.");
+                return false;
+            }
+            if (empty($email)) {
+                $message = "Profile Submission Failed: Email is required.";
+                error_log("Profile Submission Failed: Email is required.");
+                return false;
+            }
+            if (!array_key_exists($theme, $availableThemes)) {
+                $message = "Profile Submission Failed: Invalid theme selected.";
+                error_log("Profile Submission Failed: Invalid theme selected: $theme");
+                return false;
+            }
+            if (!isset($session['access_token']) || !isset($session['user_id'])) {
+                $message = "Profile Submission Failed: Authentication required.";
+                error_log("Profile Submission Failed: Authentication required. Access token: " . ($session['access_token'] ?? 'not set') . ", User ID: " . ($session['user_id'] ?? 'not set'));
+                return false;
+            }
+
+            $headers = getCommonHeaders($supabaseKey, $session['access_token']);
+            $userData = fetchUserData($session['user_id'], $supabaseKey, $restUrl, $session['access_token']);
+            if ($userData === null) {
+                $created_at = date('c');
+                $profileData = json_encode([
+                    'id' => $session['user_id'],
+                    'name' => $name,
+                    'phone_number' => $phone_number,
+                    'email' => $email,
+                    'theme' => $theme,
+                    'created_at' => $created_at
+                ]);
+
+                error_log("Attempting to create profile with data: $profileData");
+                $createResponse = makeHttpRequest($restUrl . '/user_information', 'POST', $headers, $profileData);
+
+                if ($createResponse === false) {
+                    $message = "Profile Submission Failed: Unable to connect to Supabase.";
+                    error_log("Profile Submission Failed: Unable to connect to Supabase.");
+                    return false;
+                }
+                if (isset($createResponse['error'])) {
+                    $errorMessage = $createResponse['error']['message'] ?? 'Unknown error';
+                    $errorStatus = $createResponse['error']['status_code'] ?? 'N/A';
+                    $message = "Profile Submission Failed: $errorMessage (Status: $errorStatus)";
+                    error_log("Profile Submission Failed: $errorMessage (Status: $errorStatus)");
+                    error_log("Full response: " . json_encode($createResponse));
+                    return false;
+                }
+
+                $message = "Profile created successfully!";
+                error_log("Profile created successfully for user ID {$session['user_id']}. Response: " . json_encode($createResponse));
+                $_SESSION['theme'] = $theme;
+                $_SESSION['email'] = $email;
+            } else {
+                $updateData = json_encode([
+                    'name' => $name,
+                    'phone_number' => $phone_number,
+                    'theme' => $theme
+                ]);
+
+                error_log("Attempting to update profile with data: $updateData");
+                $updateResponse = makeHttpRequest($restUrl . '/user_information?id=eq.' . $session['user_id'], 'PATCH', $headers, $updateData);
+
+                if ($updateResponse === false) {
+                    $message = "Profile Submission Failed: Unable to connect to Supabase.";
+                    error_log("Profile Submission Failed: Unable to connect to Supabase.");
+                    return false;
+                }
+                if (isset($updateResponse['error'])) {
+                    $errorMessage = $updateResponse['error']['message'] ?? 'Unknown error';
+                    $errorStatus = $updateResponse['error']['status_code'] ?? 'N/A';
+                    $message = "Profile Submission Failed: $errorMessage (Status: $errorStatus)";
+                    error_log("Profile Submission Failed: $errorMessage (Status: $errorStatus)");
+                    return false;
+                }
+
+                $message = "Profile updated successfully!";
+                error_log("Profile updated successfully for user ID {$session['user_id']}.");
+                $_SESSION['theme'] = $theme;
+            }
+
+            return true;
+        }
+    }
+}

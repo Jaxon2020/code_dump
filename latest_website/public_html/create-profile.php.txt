@@ -1,0 +1,129 @@
+<?php
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Start the session
+session_start();
+
+// Include supabase logic
+$supabaseLogicPath = $_SERVER['DOCUMENT_ROOT'] . '/supabase_logic.php';
+if (file_exists($supabaseLogicPath)) {
+    require_once $supabaseLogicPath;
+} else {
+    die("<p>Error: Supabase logic file not found at $supabaseLogicPath.</p>");
+}
+
+// Check if Supabase variables are defined
+if (!isset($supabaseKey) || !isset($restUrl) || !isset($authUrl)) {
+    die("<p>Error: Supabase configuration variables (supabaseKey, restUrl, authUrl) are not defined.</p>");
+}
+
+// Define page-specific variables for head.php
+$pageTitle = 'FarmMarket - Create Profile';
+$pageSpecificCss = ['/css/profile.css'];
+
+include $_SERVER['DOCUMENT_ROOT'] . '/head.php';
+
+// Initialize variables
+$message = '';
+
+// Check if user is signed in
+if (!isset($_SESSION['access_token']) || !isset($_SESSION['user_id'])) {
+    header('Location: /index.php');
+    exit;
+}
+
+// Check if the user already has a profile
+$userData = fetchUserData($_SESSION['user_id'], $supabaseKey, $restUrl, $_SESSION['access_token']);
+if ($userData && isset($userData['id'])) {
+    // If the user already has a profile, redirect to the profile page
+    header('Location: /profile.php');
+    exit;
+}
+
+// Handle form submission to create the profile
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_profile'])) {
+    $name = trim($_POST['name'] ?? '');
+    $phone_number = trim($_POST['phone_number'] ?? '');
+
+    // Validate inputs
+    if (empty($name)) {
+        $message = "Name is required.";
+    } else {
+        // Prepare data to insert
+        $profileData = json_encode([
+            'id' => $_SESSION['user_id'],
+            'name' => $name,
+            'phone_number' => $phone_number,
+            'email' => $_SESSION['email'] ?? '',
+            'theme' => 'farmed', // Default theme, aligned with CSS
+            'created_at' => date('c')
+        ]);
+
+        $headers = getCommonHeaders($supabaseKey, $_SESSION['access_token']);
+        $createResponse = makeHttpRequest($restUrl . '/users_information', 'POST', $headers, $profileData);
+
+        if (is_array($createResponse) && !isset($createResponse['error'])) {
+            $message = "Profile created successfully!";
+            // Redirect to the profile page after successful creation
+            header('Location: /profile.php');
+            exit;
+        } else {
+            $message = "Failed to create profile: " . ($createResponse['error']['message'] ?? 'Unknown error') . " (Status: " . ($createResponse['error']['status_code'] ?? 'N/A') . ")";
+        }
+    }
+}
+?>
+
+    <!-- Include Navigation Bar -->
+    <?php
+    $navPath = $_SERVER['DOCUMENT_ROOT'] . '/nav.php';
+    if (file_exists($navPath)) {
+        include $navPath;
+    } else {
+        echo "<p>Error: Navigation file not found at $navPath.</p>";
+    }
+    ?>
+
+    <section class="profile-content">
+        <div class="profile-container">
+            <?php if (!empty($message)): ?>
+                <p class="<?php echo strpos($message, 'Failed') !== false ? 'failure' : 'success'; ?>">
+                    <?php echo htmlspecialchars($message); ?>
+                </p>
+            <?php endif; ?>
+
+            <div class="profile-card">
+                <div class="profile-header">
+                    <h3>Create Your Profile</h3>
+                </div>
+                <form method="POST" class="auth-form">
+                    <input type="hidden" name="create_profile" value="1">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>" placeholder="Enter your name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone-number">Phone Number</label>
+                        <input type="text" id="phone-number" name="phone_number" value="<?php echo htmlspecialchars($_POST['phone_number'] ?? ''); ?>" placeholder="Enter your phone number">
+                    </div>
+                    <button type="submit" class="btn">Create Profile</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Include Footer -->
+    <?php
+    $footerPath = $_SERVER['DOCUMENT_ROOT'] . '/footer.php';
+    if (file_exists($footerPath)) {
+        include $footerPath;
+    } else {
+        echo "<p>Error: Footer file not found at $footerPath.</p>";
+    }
+    ?>
+
+</body>
+</html>

@@ -1,0 +1,229 @@
+<?php
+// Prevents redefinition of functions if this file is included multiple times
+if (!defined('SUPABASE_MESSAGING_LOADED')) {
+    define('SUPABASE_MESSAGING_LOADED', true);
+
+    // Send a message from one user to another
+    if (!function_exists('sendMessage')) {
+        function sendMessage($senderId, $receiverId, $messageContent, $supabaseKey, $restUrl, $authToken) {
+            global $message;
+
+            // Validate inputs
+            if (empty($senderId) || empty($receiverId) || empty($messageContent)) {
+                $message = "Send Message Failed: Sender ID, receiver ID, and message content are required.";
+                error_log("Send Message Failed: Missing required fields.");
+                return false;
+            }
+
+            // Ensure the sender is authenticated
+            if (empty($authToken)) {
+                $message = "Send Message Failed: Authentication token is required.";
+                error_log("Send Message Failed: Authentication token is required.");
+                return false;
+            }
+
+            // Prepare the message data
+            $messageData = [
+                'sender_id' => $senderId,
+                'receiver_id' => $receiverId,
+                'message' => $messageContent
+            ];
+            $data = json_encode($messageData);
+            $headers = getCommonHeaders($supabaseKey, $authToken, ['Prefer: return=representation']);
+
+            // Insert the message into the messages table
+            $response = makeHttpRequest($restUrl . '/messages', 'POST', $headers, $data);
+            if (isset($response['error'])) {
+                $errorMessage = $response['error']['message'] ?? 'Unknown error';
+                $message = "Send Message Failed: " . $errorMessage;
+                error_log("Send Message Failed: " . $errorMessage);
+                return false;
+            }
+
+            $newMessage = $response[0];
+            $messageId = $newMessage['id'];
+
+            // Check if a conversation already exists between the two users
+            $conversationUrl = $restUrl . "/conversations?select=*&or=(and(user1_id.eq.$senderId,user2_id.eq.$receiverId),and(user1_id.eq.$receiverId,user2_id.eq.$senderId))";
+            $conversationResponse = makeHttpRequest($conversationUrl, 'GET', $headers);
+            if (isset($conversationResponse['error'])) {
+                $errorMessage = $conversationResponse['error']['message'] ?? 'Unknown error';
+                $message = "Send Message Failed: Could not check conversation - " . $errorMessage;
+                error_log("Send Message Failed: Could not check conversation - " . $errorMessage);
+                return false;
+            }
+
+            if (empty($conversationResponse)) {
+                // No conversation exists, create a new one
+                $conversationData = [
+                    'user1_id' => min($senderId, $receiverId), // Ensure consistent ordering
+                    'user2_id' => max($senderId, $receiverId),
+                    'last_message_id' => $messageId,
+                    'updated_at' => $newMessage['created_at']
+                ];
+                $conversationDataJson = json_encode($conversationData);
+                $conversationInsertResponse = makeHttpRequest($restUrl . '/conversations', 'POST', $headers, $conversationDataJson);
+                if (isset($conversationInsertResponse['error'])) {
+                    $errorMessage = $conversationInsertResponse['error']['message'] ?? 'Unknown error';
+                    $message = "Send Message Failed: Could not create conversation - " . $errorMessage;
+                    error_log("Send Message Failed: Could not create conversation - " . $errorMessage);
+                    return false;
+                }
+            } else {
+                // Conversation exists, update the last_message_id and updated_at
+                $conversationId = $conversationResponse[0]['id'];
+                $updateData = [
+                    'last_message_id' => $messageId,
+                    'updated_at' => $newMessage['created_at']
+                ];
+                $updateDataJson = json_encode($updateData);
+                $updateResponse = makeHttpRequest($restUrl . "/conversations?id=eq.$conversationId", 'PATCH', $headers, $updateDataJson);
+                if (isset($updateResponse['error'])) {
+                    $errorMessage = $updateResponse['error']['message'] ?? 'Unknown error';
+                    $message = "Send Message Failed: Could not update conversation - " . $errorMessage;
+                    error_log("Send Message Failed: Could not update conversation - " . $errorMessage);
+                    return false;
+                }
+            }
+
+            $message = "Message sent successfully!";
+            return true;
+        }
+    }
+
+    // Get a list of conversations for a user
+// Get a list of conversations for a user
+if (!function_exists('getConversations')) {
+    function getConversations($userId, $supabaseKey, $restUrl, $authToken) {
+        global $message;
+
+        if (empty($userId)) {
+            $message = "Get Conversations Failed: User ID is required.";
+            error_log("Get Conversations Failed: User ID is required.");
+            return [];
+        }
+
+        if (empty($authToken)) {
+            $message = "Get Conversations Failed: Authentication token is required.";
+            error_log("Get Conversations Failed: Authentication token is required.");
+            return [];
+        }
+
+        $headers = getCommonHeaders($supabaseKey, $authToken, ['Prefer: return=representation']);
+
+        // Fetch conversations where the user is either user1_id or user2_id
+        $url = $restUrl . "/conversations?select=*,last_message:messages(id,sender_id,receiver_id,message,created_at),user1:user_information!user1_id(id,name),user2:user_information!user2_id(id,name)&or=(user1_id.eq.$userId,user2_id.eq.$userId)&order=updated_at.desc";
+        $response = makeHttpRequest($url, 'GET', $headers);
+
+        // Check if the request failed
+        if ($response === false) {
+            $message = "Get Conversations Failed: Unable to connect to Supabase.";
+            error_log("Get Conversations Failed: Unable to connect to Supabase. URL: $url");
+            return [];
+        }
+
+        if (isset($response['error'])) {
+            $errorMessage = $response['error']['message'] ?? 'Unknown error';
+            $message = "Get Conversations Failed: " . $errorMessage;
+            error_log("Get Conversations Failed: " . $errorMessage . " (URL: $url)");
+            return [];
+        }
+
+        // If no conversations exist, return an empty array
+        if (empty($response)) {
+            return [];
+        }
+
+        $conversations = [];
+        foreach ($response as $conv) {
+            $otherUser = $conv['user1_id'] === $userId ? $conv['user2'] : $conv['user1'];
+            $conversations[] = [
+                'conversation_id' => $conv['id'],
+                'other_user_id' => $otherUser['id'],
+                'other_user_name' => $otherUser['name'] ?? 'Unknown User',
+                'last_message' => $conv['last_message']['message'] ?? '',
+                'last_message_time' => $conv['last_message']['created_at'] ?? '',
+                'last_message_sender' => $conv['last_message']['sender_id'] === $userId ? 'You' : ($otherUser['name'] ?? 'Unknown User')
+            ];
+        }
+
+        return $conversations;
+    }
+}
+    // Get all messages in a conversation between two users
+    if (!function_exists('getMessages')) {
+        function getMessages($userId, $otherUserId, $supabaseKey, $restUrl, $authToken) {
+            global $message;
+
+            if (empty($userId) || empty($otherUserId)) {
+                $message = "Get Messages Failed: Both user IDs are required.";
+                error_log("Get Messages Failed: Both user IDs are required.");
+                return [];
+            }
+
+            if (empty($authToken)) {
+                $message = "Get Messages Failed: Authentication token is required.";
+                error_log("Get Messages Failed: Authentication token is required.");
+                return [];
+            }
+
+            $headers = getCommonHeaders($supabaseKey, $authToken, ['Prefer: return=representation']);
+
+            // Mark messages as read (where the user is the receiver and read_at is null)
+            $updateData = ['read_at' => date('c')]; // ISO 8601 format
+            $updateDataJson = json_encode($updateData);
+            $updateUrl = $restUrl . "/messages?receiver_id=eq.$userId&sender_id=eq.$otherUserId&read_at.is.null";
+            $updateResponse = makeHttpRequest($updateUrl, 'PATCH', $headers, $updateDataJson);
+            if (isset($updateResponse['error'])) {
+                $errorMessage = $updateResponse['error']['message'] ?? 'Unknown error';
+                error_log("Mark Messages as Read Failed: " . $errorMessage . " (URL: $updateUrl)");
+                // Continue even if marking as read fails, since it's not critical
+            }
+
+            // Fetch messages between the two users
+            $url = $restUrl . "/messages?select=*&or=(and(sender_id.eq.$userId,receiver_id.eq.$otherUserId),and(sender_id.eq.$otherUserId,receiver_id.eq.$userId))&order=created_at.asc";
+            $response = makeHttpRequest($url, 'GET', $headers);
+
+            if (isset($response['error'])) {
+                $errorMessage = $response['error']['message'] ?? 'Unknown error';
+                $message = "Get Messages Failed: " . $errorMessage;
+                error_log("Get Messages Failed: " . $errorMessage . " (URL: $url)");
+                return [];
+            }
+
+            return $response;
+        }
+    }
+
+    // Get user details for display
+    if (!function_exists('getUserDetails')) {
+        function getUserDetails($userId, $supabaseKey, $restUrl, $authToken) {
+            global $message;
+
+            if (empty($userId)) {
+                $message = "Get User Details Failed: User ID is required.";
+                error_log("Get User Details Failed: User ID is required.");
+                return null;
+            }
+
+            if (empty($authToken)) {
+                $message = "Get User Details Failed: Authentication token is required.";
+                error_log("Get User Details Failed: Authentication token is required.");
+                return null;
+            }
+
+            $headers = getCommonHeaders($supabaseKey, $authToken);
+            $url = $restUrl . "/user_information?select=id,name&id=eq.$userId";
+            $response = makeHttpRequest($url, 'GET', $headers);
+
+            if (isset($response['error'])) {
+                $errorMessage = $response['error']['message'] ?? 'Unknown error';
+                $message = "Get User Details Failed: " . $errorMessage;
+                error_log("Get User Details Failed: " . $errorMessage . " (URL: $url)");
+                return null;
+            }
+
+            return !empty($response) ? $response[0] : null;
+        }
+    }
+}

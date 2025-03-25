@@ -1,0 +1,161 @@
+<?php
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Ensure session is started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Include Supabase logic and messaging functions
+require_once $_SERVER['DOCUMENT_ROOT'] . '/supabase_logic.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/messaging.php';
+
+// Check if the user is authenticated
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['access_token'])) {
+    $_SESSION['message'] = "Please sign in to access messages.";
+    header("Location: /login.php");
+    exit();
+}
+
+$userId = $_SESSION['user_id'];
+$authToken = $_SESSION['access_token'];
+
+// Refresh the access token if it's expired
+if (isTokenExpired($authToken)) {
+    $newTokens = refreshAccessToken($_SESSION['refresh_token'] ?? '', $supabaseUrl, $supabaseKey);
+    if ($newTokens && isset($newTokens['access_token'])) {
+        $_SESSION['access_token'] = $newTokens['access_token'];
+        $_SESSION['refresh_token'] = $newTokens['refresh_token'];
+        $authToken = $newTokens['access_token'];
+    } else {
+        $_SESSION['message'] = "Failed to refresh access token. Please sign in again.";
+        header("Location: /login.php");
+        exit();
+    }
+}
+
+// Handle sending a message
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
+    $receiverId = $_POST['receiver_id'] ?? '';
+    $messageContent = trim($_POST['message'] ?? '');
+
+    if (sendMessage($userId, $receiverId, $messageContent, $supabaseKey, $restUrl, $authToken)) {
+        $_SESSION['message'] = "Message sent successfully!";
+    } else {
+        $_SESSION['message'] = $message; // Error message set by sendMessage
+    }
+    header("Location: messages.php?chat_with=$receiverId");
+    exit();
+}
+
+// Check for a message in the session
+if (isset($_SESSION['message'])) {
+    $message = $_SESSION['message'];
+    unset($_SESSION['message']);
+}
+
+// Determine which conversation to display
+$chatWith = $_GET['chat_with'] ?? '';
+$messages = [];
+$otherUser = null;
+if ($chatWith) {
+    $messages = getMessages($userId, $chatWith, $supabaseKey, $restUrl, $authToken);
+    $otherUser = getUserDetails($chatWith, $supabaseKey, $restUrl, $authToken);
+}
+
+// Get the user's conversations
+$conversations = getConversations($userId, $supabaseKey, $restUrl, $authToken);
+
+// Define page-specific variables for head.php
+$pageTitle = 'FarmMarket - Messages';
+$pageSpecificCss = ['/css/messages.css'];
+
+include $_SERVER['DOCUMENT_ROOT'] . '/head.php';
+?>
+
+<body data-theme="<?php echo htmlspecialchars($_SESSION['theme'] ?? 'original'); ?>">
+    <!-- Include Navigation Bar -->
+    <?php
+    $navPath = $_SERVER['DOCUMENT_ROOT'] . '/nav.php';
+    if (file_exists($navPath)) {
+        require_once $navPath;
+    } else {
+        echo "<p>Error: Navigation file not found at $navPath.</p>";
+    }
+    ?>
+
+    <section class="messaging">
+        <div class="messaging-content">
+            <h2>Messages</h2>
+
+            <?php if (!empty($message)): ?>
+                <p class="<?php echo strpos($message, 'Failed') !== false ? 'failure' : 'success'; ?>">
+                    <?php echo htmlspecialchars($message); ?>
+                </p>
+            <?php endif; ?>
+
+            <div class="messaging-container">
+                <!-- Conversations List -->
+                <div class="conversations-list">
+                    <h3>Conversations</h3>
+                    <?php if (empty($conversations)): ?>
+                        <p>No conversations yet. Start a new conversation!</p>
+                    <?php else: ?>
+                        <ul>
+                            <?php foreach ($conversations as $conv): ?>
+                                <li class="<?php echo $chatWith === $conv['other_user_id'] ? 'active' : ''; ?>">
+                                    <a href="messages.php?chat_with=<?php echo htmlspecialchars($conv['other_user_id']); ?>">
+                                        <strong><?php echo htmlspecialchars($conv['other_user_name']); ?></strong>
+                                        <p><?php echo htmlspecialchars($conv['last_message_sender'] . ': ' . substr($conv['last_message'], 0, 50)); ?>...</p>
+                                        <small><?php echo htmlspecialchars(date('M d, Y H:i', strtotime($conv['last_message_time']))); ?></small>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Chat Window -->
+                <div class="chat-window">
+                    <?php if ($chatWith && $otherUser): ?>
+                        <h3>Chat with <?php echo htmlspecialchars($otherUser['name'] ?? 'Unknown User'); ?></h3>
+                        <div class="messages">
+                            <?php if (empty($messages)): ?>
+                                <p>No messages yet. Say hello!</p>
+                            <?php else: ?>
+                                <?php foreach ($messages as $msg): ?>
+                                    <div class="message <?php echo $msg['sender_id'] === $userId ? 'sent' : 'received'; ?>">
+                                        <p><strong><?php echo $msg['sender_id'] === $userId ? 'You' : htmlspecialchars($otherUser['name']); ?>:</strong> <?php echo htmlspecialchars($msg['message']); ?></p>
+                                        <small><?php echo htmlspecialchars(date('M d, Y H:i', strtotime($msg['created_at']))); ?></small>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                        <form method="POST" class="message-form">
+                            <input type="hidden" name="receiver_id" value="<?php echo htmlspecialchars($chatWith); ?>">
+                            <input type="hidden" name="send_message" value="1">
+                            <textarea name="message" placeholder="Type your message..." required></textarea>
+                            <button type="submit" class="send-btn">Send</button>
+                        </form>
+                    <?php else: ?>
+                        <p>Select a conversation to start chatting.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Include Footer -->
+    <?php
+    $footerPath = $_SERVER['DOCUMENT_ROOT'] . '/footer.php';
+    if (file_exists($footerPath)) {
+        require_once $footerPath;
+    } else {
+        echo "<p>Error: Footer file not found at $footerPath.</p>";
+    }
+    ?>
+</body>
+</html>

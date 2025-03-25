@@ -1,0 +1,37 @@
+<?php
+// Prevents redefinition of functions if this file is included multiple times
+if (!defined('SUPABASE_THEMES_LOADED')) {
+    define('SUPABASE_THEMES_LOADED', true);
+
+    if (!function_exists('updateUserTheme')) {
+        function updateUserTheme($userId, $theme, $supabaseKey, $restUrl, $authToken) {
+            global $message;
+            if (empty($userId) || empty($theme)) {
+                $message = "Update Theme Failed: User ID and theme are required.";
+                error_log("Update Theme Failed: User ID and theme are required.");
+                return false;
+            }
+            if (empty($authToken)) {
+                $message = "Update Theme Failed: Authentication required.";
+                error_log("Update Theme Failed: Authentication required for user ID $userId");
+                return false;
+            }
+
+            $data = json_encode(['theme' => $theme]);
+            $headers = getCommonHeaders($supabaseKey, $authToken);
+            $response = makeHttpRequest($restUrl . '/user_information?id=eq.' . $userId, 'PATCH', $headers, $data);
+
+            if ($response === false) {
+                $message = "Update Theme Failed: Unable to connect to Supabase.";
+                error_log("Update Theme Failed: Unable to connect to Supabase.");
+                return false;
+            }
+            if (isset($response['error'])) {
+                $message = "Update Theme Failed: " . $response['error']['message'];
+                error_log("Update Theme Failed: " . $response['error']['message']);
+                return false;
+            }
+            return true;
+        }
+    }
+}

@@ -1,0 +1,77 @@
+<?php
+// Prevents redefinition of handlers if this file is included multiple times
+if (!defined('SUPABASE_HANDLERS_LOADED')) {
+    define('SUPABASE_HANDLERS_LOADED', true);
+
+    // Theme handling: set default theme if not set
+    if (!isset($_SESSION['theme'])) {
+        $_SESSION['theme'] = 'farmed';
+    }
+
+    // Process POST requests to trigger appropriate actions
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        error_log("Received POST request: " . json_encode($_POST));
+        if (isset($_POST['update_profile'])) {
+            $success = handleCreateProfile($_POST, $_SESSION, $supabaseKey, $restUrl, $availableThemes);
+            if ($success) {
+                header('Location: /profile.php?success=1');
+                exit;
+            }
+        } elseif (isset($_POST['signin'])) {
+            handleSignin($_POST, $supabaseKey, $authUrl, $restUrl);
+            if (isset($_SESSION['access_token']) && isset($_SESSION['user_id'])) {
+                unset($_SESSION['show_auth_form']);
+                header('Location: /profile.php');
+                exit;
+            }
+        } elseif (isset($_POST['signup'])) {
+            handleSignup($_POST, $supabaseKey, $authUrl, $restUrl);
+            if (strpos($message, 'Sign up successful') !== false) {
+                $currentUrl = strtok($_SERVER['REQUEST_URI'], '?');
+                unset($_SESSION['show_auth_form']);
+                header("Location: $currentUrl");
+                exit;
+            }
+        } elseif (isset($_POST['signout'])) {
+            $token = $_POST['form_token'] ?? '';
+            if (!validateFormToken($token, 'signout_form')) {
+                $message = "Sign Out Failed: Invalid form submission.";
+                error_log("Sign Out Failed: Invalid form submission. Token: $token");
+            } else {
+                handleSignout();
+                header('Location: /index.php');
+                exit;
+            }
+        } elseif (isset($_POST['theme'])) {
+            $_SESSION['theme'] = $_POST['theme'];
+            $showAuthForm = isset($_SESSION['show_auth_form']) && $_SESSION['show_auth_form'];
+            if ($showAuthForm) {
+                $_SESSION['show_auth_form'] = true;
+            } else {
+                unset($_SESSION['show_auth_form']);
+            }
+            $currentUrl = strtok($_SERVER['REQUEST_URI'], '?');
+            $redirectUrl = $currentUrl;
+            if ($showAuthForm) {
+                $redirectUrl .= "?show_auth_form=true";
+            }
+            header("Location: $redirectUrl");
+            exit;
+        } elseif (isset($_POST['create_listing'])) {
+            $newListing = createListing($_POST, $_FILES, $_SESSION, $supabaseUrl, $supabaseKey, $storageUrl, $restUrl);
+            if ($newListing) {
+                $_SESSION['message'] = "Listing created successfully!";
+                header('Location: /marketplace.php');
+                exit;
+            }
+        } elseif (isset($_POST['fetch_listings'])) {
+            $authToken = $_SESSION['access_token'] ?? null;
+            $userId = $_SESSION['user_id'] ?? null;
+            fetchListings($supabaseKey, $restUrl, $authToken, $userId);
+        } elseif (isset($_POST['search'])) {
+            $authToken = $_SESSION['access_token'] ?? null;
+            $userId = $_SESSION['user_id'] ?? null;
+            searchListings($_POST, $supabaseKey, $restUrl, $authToken, $userId);
+        }
+    }
+}

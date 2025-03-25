@@ -1,0 +1,87 @@
+<?php
+// Prevents redefinition of functions if this file is included multiple times
+if (!defined('SUPABASE_UTILS_LOADED')) {
+    define('SUPABASE_UTILS_LOADED', true);
+
+    // Generic HTTP request function for interacting with Supabase APIs
+    if (!function_exists('makeHttpRequest')) {
+function makeHttpRequest($url, $method, $headers = [], $data = null) {
+    $options = [
+        'http' => [
+            'method' => $method,
+            'header' => implode("\r\n", $headers),
+        ]
+    ];
+    if ($data !== null) {
+        $options['http']['content'] = $data;
+    }
+    $context = stream_context_create($options);
+    $result = @file_get_contents($url, false, $context);
+    
+    $http_response_header = $http_response_header ?? [];
+    $status_line = $http_response_header[0] ?? 'No status line';
+    
+    if ($result === false) {
+        error_log("HTTP Request Failed: URL: $url, Method: $method, Headers: " . json_encode($headers) . ", Status: $status_line");
+        return ['error' => ['message' => 'Unable to connect to Supabase', 'status_line' => $status_line, 'raw_response' => null]];
+    }
+    
+    $decoded = json_decode($result, true);
+    if ($decoded === null) {
+        error_log("HTTP Request Failed: URL: $url, Method: $method, Invalid JSON response: $result");
+        return ['error' => ['message' => 'Invalid JSON response from Supabase', 'raw_response' => $result]];
+    }
+    
+    return $decoded;
+}
+    }
+
+    // Generates common HTTP headers for Supabase requests
+    if (!function_exists('getCommonHeaders')) {
+        function getCommonHeaders($supabaseKey, $authToken = null, $extraHeaders = []) {
+            $headers = [
+                'apikey: ' . $supabaseKey,
+                'Content-Type: application/json'
+            ];
+            if ($authToken) {
+                $headers[] = 'Authorization: Bearer ' . $authToken;
+            }
+            return array_merge($headers, $extraHeaders);
+        }
+    }
+
+    // Generates a unique token to prevent CSRF attacks in forms
+    if (!function_exists('generateFormToken')) {
+        function generateFormToken($formId) {
+            $token = bin2hex(random_bytes(16));
+            if (!isset($_SESSION['form_tokens'])) {
+                $_SESSION['form_tokens'] = [];
+            }
+            $_SESSION['form_tokens'][$formId] = $token;
+            error_log("Generated new form token for form $formId: $token");
+            return $token;
+        }
+    }
+
+    // Validates the form token to ensure legitimate submissions
+    if (!function_exists('validateFormToken')) {
+        function validateFormToken($token, $formId) {
+            if (empty($token)) {
+                error_log("Form token validation failed for form $formId: Token is empty.");
+                return false;
+            }
+            if (!isset($_SESSION['form_tokens']) || !isset($_SESSION['form_tokens'][$formId])) {
+                error_log("Form token validation failed for form $formId: Session token not set.");
+                return false;
+            }
+            if ($_SESSION['form_tokens'][$formId] !== $token) {
+                error_log("Form token validation failed for form $formId: Token mismatch. Session token: {$_SESSION['form_tokens'][$formId]}, Provided token: $token");
+                return false;
+            }
+            // Regenerate the token after successful validation to prevent reuse
+            $_SESSION['form_tokens'][$formId] = bin2hex(random_bytes(16));
+            error_log("Form token validated successfully for form $formId: $token. New token generated: {$_SESSION['form_tokens'][$formId]}");
+            return true;
+        }
+    }
+}

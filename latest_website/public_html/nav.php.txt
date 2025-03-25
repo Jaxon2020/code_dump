@@ -1,0 +1,236 @@
+<?php
+// header_n_footer/nav.php
+require_once $_SERVER['DOCUMENT_ROOT'] . '/supabase_logic.php';
+
+// Start the session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Check if Supabase variables are defined
+if (!isset($supabaseKey) || !isset($restUrl) || !isset($authUrl)) {
+    $message = "Error: Supabase configuration variables (supabaseKey, restUrl, authUrl) are not defined.";
+}
+
+// Determine if the auth form should be shown
+$showAuthForm = isset($_GET['show_auth_form']) && $_GET['show_auth_form'] === 'true';
+
+// Preserve auth form state across redirects
+if (isset($_SESSION['show_auth_form'])) {
+    $showAuthForm = $_SESSION['show_auth_form'];
+}
+
+// Generate form tokens for sign-in, sign-up, and sign-out forms
+$signinToken = generateFormToken('signin_form');
+$signupToken = generateFormToken('signup_form');
+$signoutToken = generateFormToken('signout_form');
+
+// Get the current URL without query parameters
+$currentUrl = strtok($_SERVER['REQUEST_URI'], '?');
+?>
+
+<style>
+/* Style the auth form container */
+.auth-form-container {
+    display: none;
+    position: absolute;
+    top: 60px;
+    right: 10px;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    width: 300px;
+}
+
+.auth-form-container.show {
+    display: block;
+}
+
+.auth-form-container .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.auth-form-container .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-form-container .form-group label {
+    margin-bottom: 5px;
+}
+
+.auth-form-container .form-group input {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.auth-form-container .btn {
+    padding: 8px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.auth-form-container .btn:hover {
+    background-color: #45a049;
+}
+
+.auth-form-container h3 {
+    margin-top: 0;
+    font-size: 1.2em;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-actions button {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+}
+
+.nav-actions button:hover {
+    background-color: #f0f0f0;
+}
+
+.nav-actions form {
+    display: inline;
+}
+
+.nav-message {
+    text-align: center;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.nav-message.success {
+    background-color: #e7f3e7;
+    color: #2e7d32;
+    border: 1px solid #2e7d32;
+}
+
+.nav-message.failure {
+    background-color: #fdeded;
+    color: #d32f2f;
+    border: 1px solid #d32f2f;
+}
+</style>
+
+<nav class="navbar">
+    <div class="logo">
+        <a href="/index.php">FarmstoMarkets</a>
+    </div>
+    <ul class="nav-links">
+        <li><a href="/index.php">Home</a></li>
+        <li><a href="/marketplace.php">Market Place</a></li>
+        <li><a href="/about.php">About Us</a></li>
+        <li><a href="/agreement.php">Agreement</a></li>
+        <li><a href="/messages.php">Messages</a></li>
+    </ul>
+    <div class="nav-actions">
+        <?php if (isset($_SESSION['access_token']) && isset($_SESSION['user_id'])): ?>
+            <button onclick="window.location.href='/profile.php'">Profile</button>
+            <form method="POST" class="auth-form" id="signout-form">
+                <input type="hidden" name="signout" value="1">
+                <input type="hidden" name="form_token" value="<?php echo htmlspecialchars($signoutToken); ?>">
+                <button type="submit" class="sign-out" id="signout-button">Sign Out</button>
+            </form>
+        <?php else: ?>
+            <button onclick="window.location.href='/profile.php'">Profile</button>
+            <button onclick="window.location.href='<?php echo $currentUrl . "?show_auth_form=" . ($showAuthForm ? "false" : "true"); ?>'">
+                <?php echo $showAuthForm ? 'Close' : 'Sign In'; ?>
+            </button>
+        <?php endif; ?>
+        <!-- Theme Switcher -->
+        <div class="theme-switcher">
+            <form method="POST">
+                <label for="theme-select">Theme:</label>
+                <select id="theme-select" name="theme" onchange="this.form.submit()">
+                    <option value="original" <?php echo ($_SESSION['theme'] ?? 'original') === 'original' ? 'selected' : ''; ?>>Original</option>
+                    <option value="farmed" <?php echo ($_SESSION['theme'] ?? 'original') === 'farmed' ? 'selected' : ''; ?>>Farmed</option>
+                    <option value="dark" <?php echo ($_SESSION['theme'] ?? 'original') === 'dark' ? 'selected' : ''; ?>>Dark Mode</option>
+                    <option value="vintage" <?php echo ($_SESSION['theme'] ?? 'original') === 'vintage' ? 'selected' : ''; ?>>Vintage Farm</option>
+                    <option value="modern" <?php echo ($_SESSION['theme'] ?? 'original') === 'modern' ? 'selected' : ''; ?>>Modern Farm</option>
+                </select>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<!-- Sign-In/Sign-Up Form -->
+<div class="auth-form-container <?php echo $showAuthForm ? 'show' : ''; ?>">
+    <h3>Sign In</h3>
+    <form method="POST" class="auth-form" id="signin-form">
+        <input type="hidden" name="signin" value="1">
+        <input type="hidden" name="form_token" value="<?php echo htmlspecialchars($signinToken); ?>">
+        <div class="form-group">
+            <label for="signin-email">Email</label>
+            <input type="email" id="signin-email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="signin-password">Password</label>
+            <input type="password" id="signin-password" name="password" required>
+        </div>
+        <button type="submit" class="btn">Sign In</button>
+    </form>
+
+    <h3>Sign Up</h3>
+    <form method="POST" class="auth-form" id="signup-form">
+        <input type="hidden" name="signup" value="1">
+        <input type="hidden" name="form_token" value="<?php echo htmlspecialchars($signupToken); ?>">
+        <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" name="password" required>
+        </div>
+        <button type="submit" class="btn">Sign Up</button>
+    </form>
+</div>
+
+<?php if (!empty($message)): ?>
+    <p class="nav-message <?php echo strpos($message, 'Failed') !== false ? 'failure' : 'success'; ?>">
+        <?php echo htmlspecialchars($message); ?>
+    </p>
+<?php endif; ?>
+
+<script>
+    // Prevent form resubmission on page refresh
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+
+    // Disable submit buttons on form submission
+    document.getElementById('signout-form')?.addEventListener('submit', function(event) {
+        const signoutButton = document.getElementById('signout-button');
+        signoutButton.disabled = true;
+        signoutButton.textContent = 'Signing Out...';
+    });
+
+    document.getElementById('signin-form')?.addEventListener('submit', function(event) {
+        const submitButton = this.querySelector('.btn');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Signing In...';
+    });
+
+    document.getElementById('signup-form')?.addEventListener('submit', function(event) {
+        const submitButton = this.querySelector('.btn');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Signing Up...';
+    });
+</script>

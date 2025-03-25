@@ -1,0 +1,192 @@
+<?php
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Start the session
+session_start();
+
+// Include supabase logic
+$supabaseLogicPath = $_SERVER['DOCUMENT_ROOT'] . '/supabase_logic.php';
+if (file_exists($supabaseLogicPath)) {
+    require_once $supabaseLogicPath;
+} else {
+    die("<p>Error: Supabase logic file not found at $supabaseLogicPath.</p>");
+}
+
+// Check if Supabase variables are defined
+if (!isset($supabaseKey) || !isset($restUrl) || !isset($authUrl)) {
+    die("<p>Error: Supabase configuration variables (supabaseKey, restUrl, authUrl) are not defined.</p>");
+}
+
+// Define page-specific variables for head.php
+$pageTitle = 'FarmMarket - Profile';
+$pageSpecificCss = ['/css/profile.css'];
+
+include $_SERVER['DOCUMENT_ROOT'] . '/head.php';
+
+// Initialize variables
+$userData = null;
+$listings = [];
+
+// Explicitly clear the global $message variable to prevent stale error messages
+global $message;
+$message = '';
+
+// Check if user is signed in
+if (!isset($_SESSION['access_token']) || !isset($_SESSION['user_id'])) {
+    header('Location: /index.php');
+    exit;
+}
+
+// Fetch user data
+$userData = fetchUserData($_SESSION['user_id'], $supabaseKey, $restUrl, $_SESSION['access_token']);
+
+// Determine the current theme (internal value)
+$currentTheme = $userData['theme'] ?? 'farmed';
+
+// Generate form token for the profile form
+$profileToken = generateFormToken('profile_form');
+
+// Fetch user listings and log the response for debugging
+$listings = fetchListingsByUser($_SESSION['user_id'], $supabaseKey, $restUrl) ?: [];
+error_log("Profile.php - Listings Response: " . json_encode($listings));
+
+// Check for success message (e.g., after profile update)
+if (isset($_GET['success']) && $_GET['success'] == 1) {
+    $message = "Profile updated successfully!";
+}
+?>
+
+<body data-theme="<?php echo htmlspecialchars($_SESSION['theme'] ?? 'original'); ?>">
+    <!-- Include Navigation Bar -->
+    <?php
+    $navPath = $_SERVER['DOCUMENT_ROOT'] . '/nav.php';
+    if (file_exists($navPath)) {
+        include $navPath;
+    } else {
+        echo "<p>Error: Navigation file not found at $navPath.</p>";
+    }
+    ?>
+
+    <section class="modern-profile-content">
+        <div class="modern-profile-container">
+            <?php if (!empty($message)): ?>
+                <div class="message <?php echo strpos($message, 'Failed') !== false ? 'message-failure' : 'message-success'; ?>">
+                    <?php echo htmlspecialchars($message); ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="modern-profile-card">
+                <div class="modern-profile-header">
+                    <h2><?php echo $userData === null ? 'Create Your Profile' : 'Welcome, ' . htmlspecialchars($userData['name'] ?? 'User') . '!'; ?></h2>
+                </div>
+                <form method="POST" class="modern-auth-form" id="profile-form">
+                    <input type="hidden" name="update_profile" value="1">
+                    <input type="hidden" name="form_token" value="<?php echo htmlspecialchars($profileToken); ?>">
+                    <?php if ($userData === null): ?>
+                        <div class="modern-form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($_SESSION['email'] ?? ''); ?>" placeholder="Enter your email" required>
+                        </div>
+                    <?php else: ?>
+                        <div class="modern-form-group">
+                            <label for="email">Email</label>
+                            <p class="modern-static-text"><?php echo htmlspecialchars($userData['email'] ?? ($_SESSION['email'] ?? 'Unknown')); ?></p>
+                        </div>
+                    <?php endif; ?>
+                    <div class="modern-form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($userData['name'] ?? ''); ?>" placeholder="Enter your name" required>
+                    </div>
+                    <div class="modern-form-group">
+                        <label for="phone-number">Phone Number</label>
+                        <input type="text" id="phone-number" name="phone_number" value="<?php echo htmlspecialchars($userData['phone_number'] ?? ''); ?>" placeholder="Enter your phone number">
+                    </div>
+                    <div class="modern-form-group">
+                        <label for="theme">Theme</label>
+                        <select id="theme" name="theme" required>
+                            <?php foreach ($availableThemes as $internalValue => $displayName): ?>
+                                <option value="<?php echo htmlspecialchars($internalValue); ?>" <?php echo $currentTheme === $internalValue ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($displayName); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php if ($userData !== null): ?>
+                        <div class="modern-form-group">
+                            <label>Joined</label>
+                            <p class="modern-static-text"><?php echo htmlspecialchars($userData['created_at'] ?? date('c')); ?></p>
+                        </div>
+                    <?php endif; ?>
+                    <div class="modern-form-actions">
+                        <button type="submit" class="modern-btn modern-btn-primary" id="submit-profile"><?php echo $userData === null ? 'Create Profile' : 'Save Profile'; ?></button>
+                    </div>
+                </form>
+                <!-- Move Sign Out form outside the main form -->
+                <form method="POST" class="modern-signout-form" id="signout-form">
+                    <input type="hidden" name="signout" value="1">
+                    <input type="hidden" name="form_token" value="<?php echo htmlspecialchars(generateFormToken('signout_form')); ?>">
+                    <button type="submit" class="modern-btn modern-btn-danger" id="signout-button">Sign Out</button>
+                </form>
+            </div>
+
+            <!-- Listings Section -->
+            <div class="modern-listings-section">
+                <h3>Your Listings</h3>
+                <?php if (empty($listings)): ?>
+                    <div class="modern-empty-listings">
+                        <p>You haven't created any listings yet.</p>
+                        <a href="/marketplace.php" class="modern-btn modern-btn-secondary">Create a Listing</a>
+                    </div>
+                <?php else: ?>
+                    <div class="modern-listings-grid">
+                        <?php foreach ($listings as $listing): ?>
+                            <div class="modern-listing-card">
+                                <img src="<?php echo htmlspecialchars($listing['image_url'] ?? '/images/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($listing['title']); ?>" class="modern-listing-image">
+                                <div class="modern-listing-details">
+                                    <h4><?php echo htmlspecialchars($listing['title']); ?></h4>
+                                    <p><strong>Price:</strong> $<?php echo htmlspecialchars(number_format($listing['price'], 2)); ?></p>
+                                    <p><strong>Type:</strong> <?php echo htmlspecialchars($listing['type']); ?></p>
+                                    <p><strong>Location:</strong> <?php echo htmlspecialchars($listing['location']); ?></p>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </section>
+
+    <!-- Include Footer -->
+    <?php
+    $footerPath = $_SERVER['DOCUMENT_ROOT'] . '/footer.php';
+    if (file_exists($footerPath)) {
+        include $footerPath;
+    } else {
+        echo "<p>Error: Footer file not found at $footerPath.</p>";
+    }
+    ?>
+
+    <script>
+        // Prevent form resubmission on page refresh
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+
+        // Disable submit buttons on form submission
+        document.getElementById('profile-form').addEventListener('submit', function(event) {
+            const submitButton = document.getElementById('submit-profile');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+        });
+
+        document.getElementById('signout-form').addEventListener('submit', function(event) {
+            const signoutButton = document.getElementById('signout-button');
+            signoutButton.disabled = true;
+            signoutButton.textContent = 'Signing Out...';
+        });
+    </script>
+</body>
+</html>

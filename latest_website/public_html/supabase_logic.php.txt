@@ -1,0 +1,13 @@
+<?php
+// Prevents redefinition of this file's logic if included multiple times
+if (!defined('SUPABASE_LOGIC_LOADED')) {
+    define('SUPABASE_LOGIC_LOADED', true);
+
+    // Include all the split files
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/utils.php';
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/user.php';
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/listings.php';
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/themes.php';
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/handlers.php';
+}

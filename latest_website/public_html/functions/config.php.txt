@@ -1,0 +1,25 @@
+<?php
+// Prevents redefinition of constants if this file is included multiple times
+if (!defined('SUPABASE_CONFIG_LOADED')) {
+    define('SUPABASE_CONFIG_LOADED', true);
+
+    // Supabase configuration: connection details for Supabase services
+    $supabaseUrl = 'https://hemsunqtfchweiefnxmd.supabase.co';
+    $supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlbXN1bnF0ZmNod2VpZWZueG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1NzI4NTIsImV4cCI6MjA1ODE0ODg1Mn0.xq9hYqCre-JqCn_-_AcOuYXV4uRUfv2bUVUc-rmuPlM';
+    $authUrl = $supabaseUrl . '/auth/v1';
+    $restUrl = $supabaseUrl . '/rest/v1';
+    $storageUrl = $supabaseUrl . '/storage/v1';
+
+    // Global variables for application state
+    $message = '';
+    $listings = [];
+
+    // Define available themes globally
+    $availableThemes = [
+        'original' => 'Original',
+        'farmed' => 'Farmed',
+        'dark' => 'Dark Mode',
+        'vintage' => 'Vintage Farm',
+        'modern' => 'Modern Farm'
+    ];
+}

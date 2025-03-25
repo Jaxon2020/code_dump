@@ -1,0 +1,180 @@
+<?php
+// Start the session
+session_start();
+
+// Include supabase logic
+$supabaseLogicPath = $_SERVER['DOCUMENT_ROOT'] . '/supabase_logic.php';
+if (file_exists($supabaseLogicPath)) {
+    require_once $supabaseLogicPath;
+} else {
+    echo "<p>Error: Supabase logic file not found at $supabaseLogicPath.</p>";
+}
+
+// Define page-specific variables for head.php
+$pageTitle = 'FarmMarket - Your Trusted Farm Animal Marketplace';
+$pageSpecificCss = ['/css/slideshow.css']; // Add slideshow-specific CSS
+
+include $_SERVER['DOCUMENT_ROOT'] . '/head.php';
+
+// Fetch featured listings (e.g., the most recent 3 listings)
+$featuredListings = fetchListings($supabaseKey, $restUrl, $_SESSION['access_token'] ?? null, $_SESSION['user_id'] ?? null);
+$featuredListings = array_slice($featuredListings, 0, 3); // Take the first 3 listings for the slideshow
+?>
+
+<body data-theme="<?php echo htmlspecialchars($_SESSION['theme'] ?? 'original'); ?>">
+    <!-- Include Navigation Bar -->
+    <?php
+    $navPath = $_SERVER['DOCUMENT_ROOT'] . '/nav.php';
+    if (file_exists($navPath)) {
+        include $navPath;
+    } else {
+        echo "<p>Error: Navigation file not found at $navPath.</p>";
+    }
+    ?>
+
+    <!-- Hero Section with Slideshow -->
+    <section class="hero">
+        <div class="slideshow-container">
+            <?php if (!empty($featuredListings)): ?>
+                <?php foreach ($featuredListings as $index => $listing): ?>
+                    <div class="slide fade">
+                        <img src="<?php echo htmlspecialchars($listing['image_url'] ?? '/images/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($listing['title']); ?>">
+                        <div class="animal-info">
+                            <h3><?php echo htmlspecialchars($listing['title']); ?></h3>
+                            <p>$<?php echo htmlspecialchars(number_format($listing['price'], 2)); ?></p>
+                            <div class="tags">
+                                <span><?php echo htmlspecialchars($listing['type']); ?></span>
+                                <span><?php echo htmlspecialchars($listing['location']); ?></span>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+
+                <!-- Navigation Buttons -->
+                <a class="prev" onclick="plusSlides(-1)">❮</a>
+                <a class="next" onclick="plusSlides(1)">❯</a>
+
+                <!-- Dots for Navigation -->
+                <div class="dots">
+                    <?php foreach ($featuredListings as $index => $listing): ?>
+                        <span class="dot" onclick="currentSlide(<?php echo $index + 1; ?>)"></span>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <!-- Fallback if no listings are found -->
+                <div class="slide fade">
+                    <img src="/images/placeholder.jpg" alt="No Listings">
+                    <div class="animal-info">
+                        <h3>No Featured Listings Available</h3>
+                        <p>Check back later!</p>
+                        <div class="tags">
+                            <span>N/A</span>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+    </section>
+
+    <!-- Tagline and CTA -->
+    <section class="tagline">
+        <h1>Your Trusted Farm Animal Marketplace</h1>
+        <p>Connect with local farmers and find the perfect animals for your farm.</p>
+        <a href="marketplace.php" class="cta">Browse Animals</a>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="feature-card">
+            <h3>Wide Selection</h3>
+            <p>Browse through various farm animals from trusted sellers across the country.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Direct Communication</h3>
+            <p>Connect directly with sellers through our secure messaging system.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Safe Trading</h3>
+            <p>Our platform ensures transparent and secure transactions between buyers and sellers.</p>
+        </div>
+    </section>
+
+    <!-- Include Footer -->
+    <?php
+    $footerPath = $_SERVER['DOCUMENT_ROOT'] . '/footer.php';
+    if (file_exists($footerPath)) {
+        include $footerPath;
+    } else {
+        echo "<p>Error: Footer file not found at $footerPath.</p>";
+    }
+    ?>
+
+    <!-- Slideshow JavaScript -->
+    <script>
+        let slideIndex = 1;
+        let slideInterval;
+
+        // Show the initial slide and start the slideshow
+        showSlides(slideIndex);
+        startSlideshow();
+
+        // Next/previous controls
+        function plusSlides(n) {
+            clearInterval(slideInterval); // Stop the automatic slideshow
+            showSlides(slideIndex += n);
+            startSlideshow(); // Restart the slideshow
+        }
+
+        // Thumbnail image controls
+        function currentSlide(n) {
+            clearInterval(slideInterval); // Stop the automatic slideshow
+            showSlides(slideIndex = n);
+            startSlideshow(); // Restart the slideshow
+        }
+
+        // Show slides
+        function showSlides(n) {
+            let i;
+            let slides = document.getElementsByClassName("slide");
+            let dots = document.getElementsByClassName("dot");
+
+            // If there are no slides, do nothing
+            if (slides.length === 0) return;
+
+            // Wrap around the slide index
+            if (n > slides.length) { slideIndex = 1; }
+            if (n < 1) { slideIndex = slides.length; }
+
+            // Hide all slides
+            for (i = 0; i < slides.length; i++) {
+                slides[i].style.display = "none";
+            }
+
+            // Remove active class from all dots
+            for (i = 0; i < dots.length; i++) {
+                dots[i].className = dots[i].className.replace(" active", "");
+            }
+
+            // Show the current slide and set the active dot
+            slides[slideIndex - 1].style.display = "block";
+            if (dots[slideIndex - 1]) {
+                dots[slideIndex - 1].className += " active";
+            }
+        }
+
+        // Start the automatic slideshow
+        function startSlideshow() {
+            slideInterval = setInterval(function() {
+                plusSlides(1);
+            }, 5000); // Change slide every 5 seconds
+        }
+
+        // Pause slideshow on hover
+        const slideshow = document.querySelector('.slideshow-container');
+        if (slideshow) {
+            slideshow.addEventListener('mouseenter', () => clearInterval(slideInterval));
+            slideshow.addEventListener('mouseleave', startSlideshow);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+/* /public_html/agreement/agreement.css */
+
+/* Hero Section (already styled in global.css/components.css) */
+/* We’ll override specific styles if needed */
+.hero {
+    background: var(--section-bg);
+    padding: 20px;
+    text-align: center;
+}
+
+.featured-animal {
+    max-width: 600px; /* Match the screenshot’s width */
+    margin: 0 auto;
+    border: var(--card-border);
+    border-radius: 10px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+}
+
+/* Service Agreement Section */
+.agreement-content {
+    padding: 40px 20px;
+    background-color: var(--background-color);
+}
+
+.agreement-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.agreement-container h2 {
+    font-family: 'Amatic SC', cursive;
+    font-size: 2.5em;
+    color: var(--heading-color);
+    text-align: center;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.agreement-container h3 {
+    font-family: 'Amatic SC', cursive;
+    font-size: 1.8em;
+    color: var(--heading-color);
+    margin-top: 30px;
+    margin-bottom: 10px;
+}
+
+.agreement-container p,
+.agreement-container ul {
+    font-family: 'Georgia', serif;
+    color: var(--text-color);
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.agreement-container ul {
+    padding-left: 20px;
+}
+
+.agreement-container ul li {
+    margin-bottom: 10px;
+}
+
+/* Download Button */
+.download-btn {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-family: 'Georgia', serif;
+    font-size: 1em;
+    transition: background-color 0.3s;
+}
+
+.download-btn:hover {
+    background-color: var(--button-hover-bg);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+    .agreement-container h2 {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .download-btn {
+        width: 100%;
+        text-align: center;
+    }
+}

@@ -1,0 +1,131 @@
+/* components.css */
+
+/* Hero Section */
+.hero {
+    padding: 20px 50px;
+    background-color: var(--section-bg);
+    border-bottom: var(--section-border);
+}
+
+.featured-animal {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: var(--card-bg);
+    border: var(--card-border);
+    border-radius: 10px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+}
+
+.featured-animal img {
+    width: 100%;
+    height: auto;
+}
+
+.animal-info {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    border-radius: 5px;
+    border: var(--input-border);
+}
+
+.animal-info h3 {
+    margin: 0;
+    font-size: 20px;
+    font-family: 'Amatic SC', cursive;
+    color: var(--heading-color);
+}
+
+.animal-info p {
+    margin: 5px 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--price-color);
+}
+
+.tags {
+    display: flex;
+    gap: 10px;
+}
+
+.tags span {
+    background-color: var(--tag-bg);
+    color: var(--tag-text);
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+}
+
+/* Tagline Section */
+.tagline {
+    text-align: center;
+    padding: 50px;
+    background-color: var(--background-color);
+}
+
+.tagline h1 {
+    font-family: 'Amatic SC', cursive;
+    font-size: 36px;
+    color: var(--heading-color);
+    margin-bottom: 10px;
+}
+
+.tagline p {
+    font-family: 'Georgia', serif;
+    font-size: 18px;
+    color: var(--text-color);
+    margin-bottom: 20px;
+}
+
+.cta {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+    font-family: 'Georgia', serif;
+    transition: background-color 0.3s;
+}
+
+.cta:hover {
+    background-color: var(--button-hover-bg);
+}
+
+/* Features Section */
+.features {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 50px;
+    background-color: var(--section-bg);
+    border-top: var(--section-border);
+}
+
+.feature-card {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border: var(--card-border);
+    border-radius: 10px;
+    box-shadow: var(--card-shadow);
+    width: 30%;
+    text-align: center;
+}
+
+.feature-card h3 {
+    margin-top: 0;
+    font-family: 'Amatic SC', cursive;
+    color: var(--heading-color);
+}
+
+.feature-card p {
+    color: var(--text-color);
+    font-family: 'Georgia', serif;
+}

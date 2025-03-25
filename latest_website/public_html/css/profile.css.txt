@@ -1,0 +1,249 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Modern Profile Content */
+.modern-profile-content {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+/* Modern Profile Container */
+.modern-profile-container {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+/* Message Styles */
+.message {
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.message-success {
+    background-color: #e7f3e7;
+    color: #2e7d32;
+    border: 1px solid #2e7d32;
+}
+
+.message-failure {
+    background-color: #fdeded;
+    color: #d32f2f;
+    border: 1px solid #d32f2f;
+}
+
+/* Modern Profile Card */
+.modern-profile-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    max-width: 500px;
+    margin: 0 auto;
+    transition: transform 0.3s ease;
+}
+
+.modern-profile-card:hover {
+    transform: translateY(-5px);
+}
+
+.modern-profile-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.modern-profile-header h2 {
+    font-size: 2rem;
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+/* Modern Form Styles */
+.modern-auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.modern-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modern-form-group label {
+    font-size: 1rem;
+    color: #555;
+    font-weight: 500;
+}
+
+.modern-form-group input,
+.modern-form-group select {
+    padding: 12px;
+    border: none;
+    border-bottom: 2px solid #ddd;
+    border-radius: 4px 4px 0 0;
+    font-size: 1rem;
+    color: #333;
+    background: #f9f9f9;
+    transition: border-color 0.3s ease;
+}
+
+.modern-form-group input:focus,
+.modern-form-group select:focus {
+    outline: none;
+    border-bottom: 2px solid #2e7d32;
+    background: #fff;
+}
+
+.modern-form-group select {
+    appearance: none;
+    background: #f9f9f9 url('data:image/svg+xml;utf8,<svg fill="%23333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 10px center;
+    background-size: 16px;
+}
+
+.modern-static-text {
+    font-size: 1rem;
+    color: #666;
+    margin: 0;
+}
+
+/* Modern Form Actions */
+.modern-form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.modern-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modern-btn-primary {
+    background: linear-gradient(90deg, #2e7d32, #4caf50);
+    color: #fff;
+}
+
+.modern-btn-primary:hover {
+    background: linear-gradient(90deg, #4caf50, #2e7d32);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(46, 125, 50, 0.3);
+}
+
+.modern-btn-danger {
+    background: linear-gradient(90deg, #d32f2f, #f44336);
+    color: #fff;
+}
+
+.modern-btn-danger:hover {
+    background: linear-gradient(90deg, #f44336, #d32f2f);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3);
+}
+
+/* Modern Listings Section */
+.modern-listings-section {
+    margin-top: 40px;
+}
+
+.modern-listings-section h3 {
+    font-size: 1.8rem;
+    color: #333;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.modern-empty-listings {
+    text-align: center;
+    padding: 30px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.modern-empty-listings p {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.modern-btn-secondary {
+    background: linear-gradient(90deg, #0288d1, #03a9f4);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.modern-btn-secondary:hover {
+    background: linear-gradient(90deg, #03a9f4, #0288d1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(2, 136, 209, 0.3);
+}
+
+.modern-listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.modern-listing-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.modern-listing-card:hover {
+    transform: scale(1.03);
+}
+
+.modern-listing-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.modern-listing-details {
+    padding: 20px;
+}
+
+.modern-listing-details h4 {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.modern-listing-details p {
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.modern-listing-details p strong {
+    color: #333;
+}
